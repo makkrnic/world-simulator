@@ -77,8 +77,10 @@ fn main() {
         .add_plugin(WgpuPlugin)
         .add_startup_system(setup.system())
         .add_startup_system(initial_grab_cursor.system())
+        .add_system(rotate_camera_system.system())
         .add_system(move_camera_system.system())
         .add_system(cursor_grab.system())
+        .add_system(update_title.system())
         .run();
 }
 
@@ -94,9 +96,23 @@ fn setup(
         ..Default::default()
     });
 
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
+        material: materials.add(Color::rgb(0.7, 0.4, 0.3).into()),
+        transform: Transform {
+            translation: Vec3::new(0.0, 0.5, 1.0),
+            ..Default::default()
+        },
+        ..Default::default()
+    });
+
     // light
     commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..Default::default()
+    });
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(4.0, -8.0, 4.0),
         ..Default::default()
     });
 
@@ -111,11 +127,6 @@ fn setup(
 fn toggle_grab_cursor(window: &mut Window) {
     window.set_cursor_lock_mode(!window.cursor_locked());
     window.set_cursor_visibility(!window.cursor_visible());
-    if window.cursor_locked() {
-        window.set_title(WINDOW_TITLE.to_string() + " - Press ESC to release cursor");
-    } else {
-        window.set_title(WINDOW_TITLE.to_string());
-    }
 }
 
 fn initial_grab_cursor(mut windows: ResMut<Windows>) {
@@ -129,7 +140,67 @@ fn cursor_grab(keys: Res<Input<KeyCode>>, mut windows: ResMut<Windows>) {
     }
 }
 
+fn update_title(
+    mut windows: ResMut<Windows>,
+    mut query: Query<(&FlyCam, &mut Transform)>,
+) {
+    let window = windows.get_primary_mut().unwrap();
+
+    let mut position_title = "".to_string();
+    for (_camera, transform) in query.iter_mut() {
+        let local_z = transform.local_z();
+        position_title = format!("position: {:?}, Local z: {:?}", transform.translation, local_z).to_string();
+    }
+
+    let mut locked_title = WINDOW_TITLE.to_owned();
+
+    if window.cursor_locked() {
+        locked_title = locked_title + " - Press ESC to release cursor";
+    }
+
+    window.set_title(locked_title.to_string() + " " + &position_title);
+}
+
 fn move_camera_system(
+    keys: Res<Input<KeyCode>>,
+    time: Res<Time>,
+    mut windows: ResMut<Windows>,
+    settings: Res<MovementSettings>,
+    mut query: Query<(&FlyCam, &mut Transform)>,
+) {
+    let window = windows.get_primary_mut().unwrap();
+    if !window.cursor_locked() {
+        return
+    }
+
+    for (_camera, mut transform) in query.iter_mut() {
+        let mut velocity = Vec3::ZERO;
+        let local_z = transform.local_z();
+        let fwd = -Vec3::new(local_z.x, local_z.y, local_z.z);
+        let right = Vec3::new(local_z.z, 0.0, -local_z.x);
+        let up = transform.local_y();
+
+        for key in keys.get_pressed() {
+            match key {
+                KeyCode::W => velocity += fwd,
+                KeyCode::S => velocity -= fwd,
+                KeyCode::A => velocity -= right,
+                KeyCode::D => velocity += right,
+                KeyCode::Space => velocity += up,
+                KeyCode::LShift => velocity -= up,
+                _ => (),
+            }
+        }
+
+        velocity = velocity.normalize();
+
+        if !velocity.is_nan() {
+            transform.translation += velocity * time.delta_seconds() * settings.speed;
+        }
+    }
+}
+
+fn rotate_camera_system(
     settings: Res<MovementSettings>,
     windows: Res<Windows>,
     mut state: ResMut<InputState>,
@@ -138,15 +209,17 @@ fn move_camera_system(
     mut query: Query<(&FlyCam, &mut Transform, )>,
 ){
     let window = windows.get_primary().unwrap();
+    if !(window.cursor_locked() || buttons.pressed(MouseButton::Middle)) {
+        return
+    }
+
     for (_camera, mut transform) in query.iter_mut() {
         for ev in state.reader_motion.iter(&motion) {
-            if window.cursor_locked() || buttons.pressed(MouseButton::Middle) {
-                let window_scale = window.height().min(window.width());
+            let window_scale = window.height().min(window.width());
 
 
-                state.pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
-                state.yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
-            }
+            state.pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
+            state.yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
         }
 
         state.pitch = state.pitch.clamp(-1.54, 1.54);
