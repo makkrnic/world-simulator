@@ -1,3 +1,4 @@
+use bevy::app::{Events, ManualEventReader};
 use bevy::prelude::*;
 
 use bevy::asset::AssetPlugin;
@@ -18,8 +19,33 @@ use bevy::window::WindowPlugin;
 use bevy::winit::WinitPlugin;
 
 use bevy::render::pass::ClearColor;
+use bevy::input::mouse::MouseMotion;
 
+const CAMERA_SPEED: f32 = 1000.0;
 const WINDOW_TITLE: &str = "World simulator";
+
+#[derive(Default)]
+struct InputState {
+    reader_motion: ManualEventReader<MouseMotion>,
+    pitch: f32,
+    yaw: f32,
+}
+
+pub struct MovementSettings {
+    pub sensitivity: f32,
+    pub speed: f32,
+}
+
+impl Default for MovementSettings {
+    fn default() -> Self {
+        Self {
+            sensitivity: 0.00012,
+            speed: 12.,
+        }
+    }
+}
+
+pub struct FlyCam;
 
 fn main() {
     App::build()
@@ -29,6 +55,8 @@ fn main() {
             ..Default::default()
         })
         .insert_resource(ClearColor::default())
+        .init_resource::<InputState>()
+        .init_resource::<MovementSettings>()
         .add_plugin(LogPlugin)
         .add_plugin(CorePlugin)
         .add_plugin(TransformPlugin)
@@ -49,6 +77,7 @@ fn main() {
         .add_plugin(WgpuPlugin)
         .add_startup_system(setup.system())
         .add_startup_system(initial_grab_cursor.system())
+        .add_system(move_camera_system.system())
         .add_system(cursor_grab.system())
         .run();
 }
@@ -75,12 +104,13 @@ fn setup(
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
-    });
+    })
+        .insert(FlyCam);
 }
 
 fn toggle_grab_cursor(window: &mut Window) {
     window.set_cursor_lock_mode(!window.cursor_locked());
-    // windows.set_cursor_visible(!window.cursor_visible());
+    window.set_cursor_visibility(!window.cursor_visible());
     if window.cursor_locked() {
         window.set_title(WINDOW_TITLE.to_string() + " - Press ESC to release cursor");
     } else {
@@ -92,9 +122,35 @@ fn initial_grab_cursor(mut windows: ResMut<Windows>) {
     toggle_grab_cursor(windows.get_primary_mut().unwrap());
 }
 
-fn cursor_grab(keys:  Res<Input<KeyCode>>, mut windows: ResMut<Windows>) {
+fn cursor_grab(keys: Res<Input<KeyCode>>, mut windows: ResMut<Windows>) {
     let window = windows.get_primary_mut().unwrap();
     if keys.just_pressed(KeyCode::Escape) {
         toggle_grab_cursor(window)
+    }
+}
+
+fn move_camera_system(
+    settings: Res<MovementSettings>,
+    windows: Res<Windows>,
+    mut state: ResMut<InputState>,
+    motion: Res<Events<MouseMotion>>,
+    buttons: Res<Input<MouseButton>>,
+    mut query: Query<(&FlyCam, &mut Transform, )>,
+){
+    let window = windows.get_primary().unwrap();
+    for (_camera, mut transform) in query.iter_mut() {
+        for ev in state.reader_motion.iter(&motion) {
+            if window.cursor_locked() || buttons.pressed(MouseButton::Middle) {
+                let window_scale = window.height().min(window.width());
+
+
+                state.pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
+                state.yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
+            }
+        }
+
+        state.pitch = state.pitch.clamp(-1.54, 1.54);
+
+        transform.rotation = Quat::from_axis_angle(Vec3::Y, state.yaw) * Quat::from_axis_angle(Vec3::X, state.pitch);
     }
 }
