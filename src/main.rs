@@ -16,12 +16,15 @@ use bevy::ui::UiPlugin;
 use bevy::wgpu::WgpuPlugin;
 use bevy::window::WindowPlugin;
 use bevy::winit::WinitPlugin;
+
 use bevy::render::pass::ClearColor;
+
+const WINDOW_TITLE: &str = "World simulator";
 
 fn main() {
     App::build()
         .insert_resource(WindowDescriptor {
-            title: "World simulator".to_string(),
+            title: WINDOW_TITLE.to_string(),
             vsync: true,
             ..Default::default()
         })
@@ -45,6 +48,8 @@ fn main() {
         .add_plugin(WinitPlugin)
         .add_plugin(WgpuPlugin)
         .add_startup_system(setup.system())
+        .add_startup_system(initial_grab_cursor.system())
+        .add_system(cursor_grab.system())
         .run();
 }
 
@@ -71,4 +76,25 @@ fn setup(
         transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
+}
+
+fn toggle_grab_cursor(window: &mut Window) {
+    window.set_cursor_lock_mode(!window.cursor_locked());
+    // windows.set_cursor_visible(!window.cursor_visible());
+    if window.cursor_locked() {
+        window.set_title(WINDOW_TITLE.to_string() + " - Press ESC to release cursor");
+    } else {
+        window.set_title(WINDOW_TITLE.to_string());
+    }
+}
+
+fn initial_grab_cursor(mut windows: ResMut<Windows>) {
+    toggle_grab_cursor(windows.get_primary_mut().unwrap());
+}
+
+fn cursor_grab(keys:  Res<Input<KeyCode>>, mut windows: ResMut<Windows>) {
+    let window = windows.get_primary_mut().unwrap();
+    if keys.just_pressed(KeyCode::Escape) {
+        toggle_grab_cursor(window)
+    }
 }
