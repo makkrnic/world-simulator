@@ -1,4 +1,5 @@
 mod fly_camera;
+mod world;
 
 use bevy::app::{Events, ManualEventReader};
 use bevy::prelude::*;
@@ -23,6 +24,7 @@ use bevy::winit::WinitPlugin;
 use bevy::render::pass::ClearColor;
 use bevy::input::mouse::MouseMotion;
 use crate::fly_camera::{FlyCam, FlyCamPlugin};
+use crate::world::WorldPlugin;
 
 const WINDOW_TITLE: &str = "World simulator";
 
@@ -55,6 +57,7 @@ fn main() {
         .add_plugin(FlyCamPlugin)
         .add_startup_system(setup.system())
         .add_system(update_title.system())
+        .add_plugin(WorldPlugin)
         .run();
 }
 
@@ -63,23 +66,6 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // plane
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
-        ..Default::default()
-    });
-
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 2.0 })),
-        material: materials.add(Color::rgb(0.7, 0.4, 0.3).into()),
-        transform: Transform {
-            translation: Vec3::new(0.0, 0.5, 1.0),
-            ..Default::default()
-        },
-        ..Default::default()
-    });
-
     // light
     commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
