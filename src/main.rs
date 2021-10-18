@@ -30,6 +30,11 @@ const WINDOW_TITLE: &str = "World simulator";
 
 struct FPSCounter(Timer, u32);
 
+#[derive(Default)]
+struct State {
+    fps: u32,
+}
+
 fn main() {
     App::build()
         .insert_resource(WindowDescriptor {
@@ -62,6 +67,7 @@ fn main() {
         .add_system(update_title.system())
         .add_plugin(WorldPlugin)
         .add_system(fps_counter.system())
+        .init_resource::<State>()
         .run();
 }
 
@@ -84,6 +90,7 @@ fn setup(
 fn update_title(
     mut windows: ResMut<Windows>,
     mut query: Query<(&FlyCam, &mut Transform)>,
+    state: Res<State>,
 ) {
     let window = windows.get_primary_mut().unwrap();
 
@@ -99,14 +106,16 @@ fn update_title(
         locked_title = locked_title + " - Press ESC to release cursor";
     }
 
-    window.set_title(locked_title.to_string() + " " + &position_title);
+    let fps = format!("{} FPS ", state.fps);
+
+    window.set_title(fps.to_string() + &locked_title.to_string() + " " + &position_title);
 }
 
-fn fps_counter(time: Res<Time>, mut timer: ResMut<FPSCounter>) {
+fn fps_counter(time: Res<Time>, mut timer: ResMut<FPSCounter>, mut state: ResMut<State>) {
     timer.0.tick(time.delta());
     timer.1 += 1;
     if timer.0.finished() {
-        println!("One-{}", timer.1);
+        state.fps = timer.1;
         timer.1 = 0;
     }
 }
