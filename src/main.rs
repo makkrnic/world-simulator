@@ -28,6 +28,8 @@ use crate::world::WorldPlugin;
 
 const WINDOW_TITLE: &str = "World simulator";
 
+struct FPSCounter(Timer, u32);
+
 fn main() {
     App::build()
         .insert_resource(WindowDescriptor {
@@ -36,6 +38,7 @@ fn main() {
             ..Default::default()
         })
         .insert_resource(ClearColor::default())
+        .insert_resource(FPSCounter(Timer::from_seconds(1.0, true), 0))
         .add_plugin(LogPlugin)
         .add_plugin(CorePlugin)
         .add_plugin(TransformPlugin)
@@ -58,6 +61,7 @@ fn main() {
         .add_startup_system(setup.system())
         .add_system(update_title.system())
         .add_plugin(WorldPlugin)
+        .add_system(fps_counter.system())
         .run();
 }
 
@@ -96,4 +100,13 @@ fn update_title(
     }
 
     window.set_title(locked_title.to_string() + " " + &position_title);
+}
+
+fn fps_counter(time: Res<Time>, mut timer: ResMut<FPSCounter>) {
+    timer.0.tick(time.delta());
+    timer.1 += 1;
+    if timer.0.finished() {
+        println!("One-{}", timer.1);
+        timer.1 = 0;
+    }
 }
