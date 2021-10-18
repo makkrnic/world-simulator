@@ -19,6 +19,8 @@ fn generate_world(
     mut materials: ResMut<Assets<StandardMaterial>>
 ) {
     let p = Perlin::new();
+    let cube_mesh = meshes.add(Mesh::from(shape::Cube { size: VOXEL_SIZE as f32 }));
+    let cube_mat = materials.add(Color::rgb(0.7, 0.4, 0.3).into());
 
     for y in 0..CHUNK_SIZE_Y {
         for x in 1..CHUNK_SIZE_X {
@@ -26,8 +28,8 @@ fn generate_world(
             height = (height * STEP_SIZE).trunc() / STEP_SIZE;
 
             commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(Mesh::from(shape::Cube { size: VOXEL_SIZE as f32 })),
-                material: materials.add(Color::rgb(0.7, 0.4, 0.3).into()),
+                mesh: cube_mesh.clone(),
+                material: cube_mat.clone(),
                 transform: Transform {
                     translation: Vec3::new(x as f32 / STEP_SIZE , height as f32, y as f32 / STEP_SIZE),
                     ..Default::default()
