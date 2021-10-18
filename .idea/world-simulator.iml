@@ -4,42 +4,85 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ahash-7375c5cf9232d1ad/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ahash-9de0a8a032956067/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/alsa-sys-ac81cd165cad19d7/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/alsa-sys-bac44b54b4751d1e/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/anyhow-ded7d4b4ca0b71af/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/anyhow-eadbbecab52d64a1/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/bevy-glsl-to-spirv-8086389da19078b9/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/bevy-glsl-to-spirv-9884375e2cc1ef06/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/cpal-53de5002d2e72c57/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/cpal-d24fbf790336dbbe/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crc32fast-8857df6c539c4fc0/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crc32fast-b22ab0180c5c9531/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crossbeam-epoch-467104ffd6cd2efe/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crossbeam-epoch-9545907ede813b97/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crossbeam-queue-a679b75cbb07bfb6/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crossbeam-utils-38aeadf0d30516e8/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/crossbeam-utils-39471118831c1867/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/drm-fourcc-3d652f01793e18f9/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/erased-serde-10450a302862c4b8/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/erased-serde-88ca134f1348b685/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/futures-core-5ee923867f0af1d1/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/futures-core-81b9d9371bbb2a8e/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/getrandom-02db7b46f6f24553/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/getrandom-1c1396f07d8aa0f5/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/indexmap-006341ed131f6a7c/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/indexmap-2409bd65d1ac3c93/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/khronos-egl-579b92f6016bcf47/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/khronos-egl-75a75780a62dc4ff/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/khronos-egl-9e6741844e654a80/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libc-07f70e90cbcd7e46/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libc-df221f87f0961261/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libm-8c798e836edfa5f1/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libm-a8cc1b50e0c30c5c/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libudev-sys-7e3cc40f186c3b2b/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/libudev-sys-c9abe285602be876/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/log-03807f46d9517095/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/log-acdb693f73a60475/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/memchr-3df77c18844ff9d8/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/memchr-93ce652f7540f438/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/memoffset-51582c6cd3bd014e/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/memoffset-d039f1b60ceb43ee/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/minimp3-sys-8f3001255a6531e7/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/minimp3-sys-ba5ff0ff1b77dd66/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/minimp3-sys-ec41bed2d7e3a383/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/miniz_oxide-3c78b2c41dd8df81/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/miniz_oxide-891fe947321a160a/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-integer-4e589efb44dc3b4b/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-integer-b81d3d5a6cacb39d/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-iter-56a5431b4d445ed8/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-iter-c29296321554ee63/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-rational-36b70380f69453e8/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-rational-6ce1392eb6850969/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-traits-4a34b0c8df90f11b/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/num-traits-ef4243c02e43fe07/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/parking_lot_core-820a5b0c8ccefd8b/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/parking_lot_core-d9eed156d8a2c3eb/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/proc-macro2-5a750eb214ecc2d7/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/rayon-b88da6e9a52ec2e0/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/rayon-b997174a24388bdf/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/rayon-core-9d476f654bd4ed1f/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/rayon-core-a63b3231df000616/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ryu-9d39f11a8c814538/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/ryu-ab5f220ddd6b7475/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde-65bf19e4b89fdbea/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde-6ee204d70fb257c8/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_derive-63c3f0d88a7d3317/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_json-4e0d8720483b64c0/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/serde_json-66ed275d59808789/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/spirv-reflect-2e95fced4afaa1e3/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/spirv-reflect-72a25518a572e29a/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/spirv-reflect-ed4700041d6951ea/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/spirv_cross-15d8b4a57c88ba43/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/spirv_cross-1fe845981616de04/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-7775fc39ffe17530/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/syn-7eb438b68e16e4c0/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wgpu-core-64f3d9df1152a49b/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wgpu-core-71369e0cd71b86d4/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/wgpu-core-d91626ebda5719bb/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/winit-7ce351d532e5e012/out" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/target/debug/build/x11-dl-7d838244501c806a/out" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/target/debug/build/x11-dl-dc9d324c417ca1b2/out" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>

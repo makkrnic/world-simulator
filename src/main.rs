@@ -21,10 +21,10 @@ use bevy::wgpu::WgpuPlugin;
 use bevy::window::WindowPlugin;
 use bevy::winit::WinitPlugin;
 
-use bevy::render::pass::ClearColor;
-use bevy::input::mouse::MouseMotion;
 use crate::fly_camera::{FlyCam, FlyCamPlugin};
 use crate::world::WorldPlugin;
+use bevy::input::mouse::MouseMotion;
+use bevy::render::pass::ClearColor;
 
 const WINDOW_TITLE: &str = "World simulator";
 
@@ -36,7 +36,7 @@ struct State {
 }
 
 fn main() {
-    App::build()
+    App::new()
         .insert_resource(WindowDescriptor {
             title: WINDOW_TITLE.to_string(),
             vsync: true,
@@ -71,18 +71,18 @@ fn main() {
         .run();
 }
 
+#[derive(Debug, Bundle, Default)]
+struct DirLightBundle {
+    pub dir_light: DirectionalLight,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
+}
+
 fn setup(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // light
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..Default::default()
-    });
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(4.0, -8.0, 4.0),
+    commands.spawn_bundle(DirLightBundle {
+        dir_light: DirectionalLight::new(Color::WHITE, 100000.0, Vec3::new(-2.0, -1.0, -3.0)),
         ..Default::default()
     });
 }
@@ -97,7 +97,11 @@ fn update_title(
     let mut position_title = "".to_string();
     for (_camera, transform) in query.iter_mut() {
         let local_z = transform.local_z();
-        position_title = format!("position: {:?}, Local z: {:?}", transform.translation, local_z).to_string();
+        position_title = format!(
+            "position: {:?}, Local z: {:?}",
+            transform.translation, local_z
+        )
+        .to_string();
     }
 
     let mut locked_title = WINDOW_TITLE.to_owned();

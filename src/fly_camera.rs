@@ -1,7 +1,8 @@
-use bevy::app::{AppBuilder, Events, ManualEventReader};
+use bevy::app::{Events, ManualEventReader};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 
+#[derive(Component)]
 pub struct FlyCam;
 
 const CAMERA_SPEED: f32 = 1000.0;
@@ -36,7 +37,7 @@ fn move_camera_system(
 ) {
     let window = windows.get_primary_mut().unwrap();
     if !window.cursor_locked() {
-        return
+        return;
     }
 
     for (_camera, mut transform) in query.iter_mut() {
@@ -72,17 +73,16 @@ fn rotate_camera_system(
     mut state: ResMut<InputState>,
     motion: Res<Events<MouseMotion>>,
     buttons: Res<Input<MouseButton>>,
-    mut query: Query<(&FlyCam, &mut Transform, )>,
-){
+    mut query: Query<(&FlyCam, &mut Transform)>,
+) {
     let window = windows.get_primary().unwrap();
     if !(window.cursor_locked() || buttons.pressed(MouseButton::Middle)) {
-        return
+        return;
     }
 
     for (_camera, mut transform) in query.iter_mut() {
         for ev in state.reader_motion.iter(&motion) {
             let window_scale = window.height().min(window.width());
-
 
             state.pitch -= (settings.sensitivity * ev.delta.y * window_scale).to_radians();
             state.yaw -= (settings.sensitivity * ev.delta.x * window_scale).to_radians();
@@ -90,7 +90,8 @@ fn rotate_camera_system(
 
         state.pitch = state.pitch.clamp(-1.54, 1.54);
 
-        transform.rotation = Quat::from_axis_angle(Vec3::Y, state.yaw) * Quat::from_axis_angle(Vec3::X, state.pitch);
+        transform.rotation =
+            Quat::from_axis_angle(Vec3::Y, state.yaw) * Quat::from_axis_angle(Vec3::X, state.pitch);
     }
 }
 
@@ -110,28 +111,26 @@ fn cursor_grab(keys: Res<Input<KeyCode>>, mut windows: ResMut<Windows>) {
     }
 }
 
-fn setup(
-    mut commands: Commands,
-) {
+fn setup(mut commands: Commands) {
     // camera
-    commands.spawn_bundle(PerspectiveCameraBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..Default::default()
-    })
+    commands
+        .spawn_bundle(PerspectiveCameraBundle {
+            transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+            ..Default::default()
+        })
         .insert(FlyCam);
 }
 
 pub struct FlyCamPlugin;
 
 impl Plugin for FlyCamPlugin {
-    fn build(&self, app: &mut AppBuilder) {
+    fn build(&self, app: &mut App) {
         app.init_resource::<InputState>()
             .init_resource::<MovementSettings>()
             .add_startup_system(initial_grab_cursor.system())
             .add_system(rotate_camera_system.system())
             .add_system(move_camera_system.system())
             .add_system(cursor_grab.system())
-            .add_startup_system(setup.system())
-        ;
+            .add_startup_system(setup.system());
     }
 }
