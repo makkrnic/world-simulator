@@ -7,7 +7,7 @@ use bevy::prelude::*;
 use bevy::asset::AssetPlugin;
 // use bevy::audio::AudioPlugin;
 use bevy::core::CorePlugin;
-use bevy::diagnostic::DiagnosticsPlugin;
+use bevy::diagnostic::{Diagnostic, DiagnosticId, Diagnostics, DiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::gltf::GltfPlugin;
 use bevy::input::InputPlugin;
 use bevy::log::LogPlugin;
@@ -63,12 +63,24 @@ fn main() {
         .add_plugin(WinitPlugin)
         .add_plugin(WgpuPlugin)
         .add_plugin(FlyCamPlugin)
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_startup_system(setup_diagnostic_system.system())
         .add_startup_system(setup.system())
         .add_system(update_title.system())
         .add_plugin(WorldPlugin)
         .add_system(fps_counter.system())
         .init_resource::<State>()
         .run();
+}
+
+pub const DIAGNOSTIC_FPS: DiagnosticId = DiagnosticId::from_u128(1);
+
+fn setup_diagnostic_system(mut diagnostics: ResMut<Diagnostics>) {
+    diagnostics.add(Diagnostic::new(
+        DIAGNOSTIC_FPS,
+        "fps",
+        100
+    ))
 }
 
 #[derive(Debug, Bundle, Default)]
@@ -115,11 +127,12 @@ fn update_title(
     window.set_title(fps.to_string() + &locked_title.to_string() + " " + &position_title);
 }
 
-fn fps_counter(time: Res<Time>, mut timer: ResMut<FPSCounter>, mut state: ResMut<State>) {
+fn fps_counter(time: Res<Time>, mut timer: ResMut<FPSCounter>, mut state: ResMut<State>, mut diagnostics: ResMut<Diagnostics>) {
     timer.0.tick(time.delta());
     timer.1 += 1;
     if timer.0.finished() {
         state.fps = timer.1;
+        diagnostics.add_measurement(DIAGNOSTIC_FPS, state.fps as f64);
         timer.1 = 0;
     }
 }
