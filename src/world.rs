@@ -1,56 +1,256 @@
+use std::collections::VecDeque;
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
+use bevy::ecs::entity::Entity;
+use bevy::ecs::event::EventWriter;
 use bevy::ecs::system::Commands;
-use bevy::math::Vec3;
+use bevy::math::{IVec2, Vec3};
+use bevy::prelude::*;
 use bevy::pbr::PbrBundle;
-use bevy::prelude::{shape, Mesh, ResMut, StandardMaterial, Transform};
+use bevy::prelude::{shape, Mesh, ResMut, StandardMaterial, Transform, Res, Query};
 use bevy::prelude::{Color, IntoSystem};
+use bevy::reflect::List;
+use bevy::utils::HashMap;
+use building_blocks::core::{Extent3i, PointN};
+use building_blocks::prelude::Array3x1;
+use ndarray::Array3;
 use noise::{NoiseFn, OpenSimplex};
+use crate::config::PlayerConfig;
+use crate::fly_camera::FlyCam;
+// use crate::world::VoxelType::NONE;
+use building_blocks::prelude::FillExtent;
 
-const CHUNK_SIZE_X: i64 = 64;
-const CHUNK_SIZE_Y: i64 = 64;
+const CHUNK_SIZE_X: i32 = 16;
+const CHUNK_SIZE_Z: i32 = 16;
+const CHUNK_SIZE_Y: i32 = 256;
+
 const VOXEL_SIZE: f32 = 0.25;
 const STEP_SIZE: f32 = 1.0 / VOXEL_SIZE;
 const NOISE_SCALE: f32 = 16.0 / VOXEL_SIZE;
 
-fn generate_world(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+pub type ChunkMap = HashMap<IVec2, Entity>;
+
+#[inline]
+pub fn chunk_extent() -> Extent3i {
+    return Extent3i::from_min_and_shape(
+        PointN([0; 3]),
+        PointN([CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z]),
+    );
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct Voxel {
+    pub attributes: [u8; 4],
+}
+
+struct ChunkSpawnRequest(IVec2);
+struct ChunkDespawnRequest(IVec2, Entity);
+struct ChunkLoadRequest(Entity);
+
+pub struct ChunkReadyEvent(pub IVec2, pub Entity);
+
+#[derive(Default)]
+pub struct VoxelWorld {
+    pub loaded_chunks: ChunkMap,
+}
+
+#[derive(Component)]
+pub enum ChunkLoadState {
+    Load,
+    Unload,
+    Despawn,
+    Generate,
+    Done,
+}
+
+#[derive(Component)]
+pub struct Chunk {
+    pub pos: IVec2,
+    pub block_data: Array3x1<Voxel>,
+}
+
+#[derive(Bundle)]
+pub struct ChunkDataBundle {
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
+    pub chunk: Chunk,
+}
+
+fn update_visible_chunks(
+    player_query: Query<(&FlyCam, &Transform)>,
+    player_config: Res<PlayerConfig>,
+    world: Res<VoxelWorld>,
+    mut spawn_requests: EventWriter<ChunkSpawnRequest>,
+    mut despawn_requests: EventWriter<ChunkDespawnRequest>,
 ) {
-    let p = OpenSimplex::new();
-    let cube_mesh = meshes.add(Mesh::from(shape::Cube { size: VOXEL_SIZE }));
-    let cube_mat = materials.add(Color::rgb(0.7, 0.4, 0.3).into());
+    for (player, transform) in player_query.iter() {
+        let current_chunk_pos = get_chunk_indices(transform.translation);
 
-    for y in 0..CHUNK_SIZE_Y {
-        for x in 1..CHUNK_SIZE_X {
-            let mut height = (p.get([
-                (x as f32 / NOISE_SCALE) as f64,
-                (y as f32 / NOISE_SCALE) as f64,
-            ]) * 16.0) as f32;
-            height = (height * STEP_SIZE).trunc() / STEP_SIZE;
+        let mut load_radius_chunks: Vec<IVec2> = Vec::new();
+        let max_distance = player_config.chunk_render_distance as i32;
 
-            commands.spawn_bundle(PbrBundle {
-                mesh: cube_mesh.clone(),
-                material: cube_mat.clone(),
-                transform: Transform {
-                    translation: Vec3::new(
-                        x as f32 / STEP_SIZE,
-                        height as f32,
-                        y as f32 / STEP_SIZE,
-                    ),
-                    ..Default::default()
-                },
-                ..Default::default()
-            });
+        for dx in -max_distance..=max_distance {
+            for dy in -max_distance..=max_distance {
+                // Skip chunks out of render_distance radius
+                if dx.pow(2) + dy.pow(2) >= max_distance.pow(2) {
+                    continue;
+                }
+
+                let chunk_pos = current_chunk_pos + IVec2::new(dx, dy);
+                if !world.loaded_chunks.contains_key(&chunk_pos) {
+                    load_radius_chunks.push(chunk_pos);
+                }
+            }
+        }
+
+        load_radius_chunks.sort_by_key(|a| (a.x.pow(2) + a.y.pow(2)));
+        // println!("load radius chunks: {:?}", load_radius_chunks);
+
+        spawn_requests.send_batch(
+            load_radius_chunks
+                .into_iter()
+                .map(|c| ChunkSpawnRequest(c.clone())),
+        );
+
+        for key in world.loaded_chunks.keys() {
+            let delta = *key - current_chunk_pos;
+            let entity = world.loaded_chunks.get(key).unwrap().clone();
+            if delta.x.pow(2) + delta.y.pow(2) > player_config.chunk_render_distance.pow(2).into() {
+                despawn_requests.send(ChunkDespawnRequest(key.clone(), entity));
+            }
         }
     }
 }
 
-pub struct WorldPlugin;
+fn prepare_for_unload(
+    mut despawn_events: EventReader<ChunkDespawnRequest>,
+    mut chunks: Query<&mut ChunkLoadState>,
+) {
+    for despawn_event in despawn_events.iter() {
+        if let Ok(mut load_state) = chunks.get_mut(despawn_event.1) {
+            *load_state = ChunkLoadState::Unload;
+        }
+    }
+}
 
-impl Plugin for WorldPlugin {
+fn destroy_chunks(
+    mut commands: Commands,
+    mut world: ResMut<VoxelWorld>,
+    chunks: Query<(&Chunk, &ChunkLoadState)>,
+) {
+    for (chunk, load_state) in chunks.iter() {
+        match load_state {
+            ChunkLoadState::Unload => {
+                let entity = world.loaded_chunks.remove(&chunk.pos).unwrap();
+                println!("unloading chunk {:?}", entity);
+                commands.entity(entity).despawn();
+            }
+            _ => {},
+        }
+    }
+}
+
+fn get_chunk_indices(pos: Vec3) -> IVec2 {
+    IVec2::new(
+        pos.x.floor() as i32 / CHUNK_SIZE_X,
+        pos.z.floor() as i32 / CHUNK_SIZE_Z,
+    )
+}
+
+fn get_global_chunk_coordinates(coords: IVec2) -> Vec3 {
+    Vec3::new(
+        (coords.x * CHUNK_SIZE_X) as f32,
+        0.0,
+        (coords.y * CHUNK_SIZE_Z) as f32,
+    )
+}
+
+fn create_chunks(
+    mut commands: Commands,
+    mut spawn_events: EventReader<ChunkSpawnRequest>,
+    mut world: ResMut<VoxelWorld>
+) {
+    for creation_request in spawn_events.iter() {
+        let entity = commands
+            .spawn_bundle(ChunkDataBundle {
+                transform: Transform::from_translation(get_global_chunk_coordinates(creation_request.0)),
+                chunk: Chunk {
+                    pos: creation_request.0,
+                    block_data: Array3x1::fill(chunk_extent().padded(1), Voxel::default()),
+                },
+                global_transform: Default::default(),
+            })
+            .insert(ChunkLoadState::Load)
+            .id();
+
+        world.loaded_chunks.insert(creation_request.0, entity);
+    }
+}
+
+fn load_chunk_data(
+    mut chunks: Query<(&mut ChunkLoadState, Entity), Added<Chunk>>,
+    mut gen_requests: ResMut<VecDeque<ChunkLoadRequest>>,
+) {
+    for (mut load_state, entity) in chunks.iter_mut() {
+        match *load_state {
+            ChunkLoadState::Load => {
+                println!("loading chunk {:?}", entity);
+                *load_state = ChunkLoadState::Generate;
+                gen_requests.push_front(ChunkLoadRequest(entity));
+            }
+            _ => continue,
+        }
+    }
+}
+
+fn generate_chunks(
+    player_config: Res<PlayerConfig>,
+    mut query: Query<(&mut Chunk, &mut ChunkLoadState)>,
+    mut gen_requests: ResMut<VecDeque<ChunkLoadRequest>>,
+) {
+    for _ in 0..(player_config.chunk_render_distance / 2) {
+        if let Some(ev) = gen_requests.pop_back() {
+            if let Ok((mut data, mut load_state)) = query.get_mut(ev.0) {
+                data.block_data.fill_extent(
+                    &chunk_extent(),
+                    Voxel {
+                        attributes: [255; 4],
+                    },
+                );
+                *load_state = ChunkLoadState::Done;
+            }
+        }
+    }
+}
+
+fn mark_chunks_ready(
+    mut ready_events: EventWriter<ChunkReadyEvent>,
+    chunks: Query<(&Chunk, &ChunkLoadState, Entity), Changed<ChunkLoadState>>,
+) {
+    for (chunk, load_state, entity) in chunks.iter() {
+        match load_state {
+            ChunkLoadState::Done => ready_events.send(ChunkReadyEvent(chunk.pos, entity)),
+            _ => {}
+        }
+    }
+}
+
+pub struct VoxelWorldPlugin;
+
+impl Plugin for VoxelWorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_system(generate_world.system());
+        app
+            .insert_resource(VoxelWorld::default())
+            .init_resource::<VecDeque<ChunkLoadRequest>>()
+            .add_event::<ChunkSpawnRequest>()
+            .add_event::<ChunkDespawnRequest>()
+            .add_event::<ChunkReadyEvent>()
+            .add_system(update_visible_chunks.system())
+            .add_system(create_chunks.system())
+            .add_system(load_chunk_data.system())
+            .add_system(generate_chunks.system())
+            .add_system(prepare_for_unload.system())
+            .add_system(mark_chunks_ready.system())
+            .add_system(destroy_chunks.system());
     }
 }

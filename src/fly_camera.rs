@@ -2,10 +2,10 @@ use bevy::app::{Events, ManualEventReader};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct FlyCam;
 
-const CAMERA_SPEED: f32 = 1000.0;
+const CAMERA_SPEED: f32 = 12.0;
 
 #[derive(Default)]
 struct InputState {
@@ -23,7 +23,7 @@ impl Default for MovementSettings {
     fn default() -> Self {
         Self {
             sensitivity: 0.00012,
-            speed: 12.,
+            speed: CAMERA_SPEED,
         }
     }
 }

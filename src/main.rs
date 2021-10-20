@@ -1,5 +1,6 @@
 mod fly_camera;
 mod world;
+mod config;
 
 use bevy::app::{Events, ManualEventReader};
 use bevy::prelude::*;
@@ -17,14 +18,17 @@ use bevy::scene::ScenePlugin;
 use bevy::sprite::SpritePlugin;
 use bevy::text::TextPlugin;
 use bevy::ui::UiPlugin;
-use bevy::wgpu::WgpuPlugin;
+use bevy::wgpu::{WgpuFeature, WgpuFeatures, WgpuOptions, WgpuPlugin};
 use bevy::window::WindowPlugin;
 use bevy::winit::WinitPlugin;
 
 use crate::fly_camera::{FlyCam, FlyCamPlugin};
-use crate::world::WorldPlugin;
+use crate::world::VoxelWorldPlugin;
 use bevy::input::mouse::MouseMotion;
 use bevy::render::pass::ClearColor;
+use bevy::render::wireframe::{WireframeConfig, WireframePlugin};
+use bevy::wgpu::WgpuBackend::Vulkan;
+use crate::config::PlayerConfig;
 
 const WINDOW_TITLE: &str = "World simulator";
 
@@ -37,6 +41,7 @@ struct State {
 
 fn main() {
     App::new()
+        .insert_resource(PlayerConfig::default())
         .insert_resource(WindowDescriptor {
             title: WINDOW_TITLE.to_string(),
             vsync: true,
@@ -44,6 +49,14 @@ fn main() {
         })
         .insert_resource(ClearColor::default())
         .insert_resource(FPSCounter(Timer::from_seconds(1.0, true), 0))
+        // .insert_resource(Msaa { samples: 2 })
+        .insert_resource(WgpuOptions {
+            backend: Vulkan,
+            features: WgpuFeatures {
+                features: vec![WgpuFeature::NonFillPolygonMode]
+            },
+            ..Default::default()
+        })
         .add_plugin(LogPlugin)
         .add_plugin(CorePlugin)
         .add_plugin(TransformPlugin)
@@ -63,11 +76,12 @@ fn main() {
         .add_plugin(WinitPlugin)
         .add_plugin(WgpuPlugin)
         .add_plugin(FlyCamPlugin)
+        .add_plugin(WireframePlugin)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_startup_system(setup_diagnostic_system.system())
         .add_startup_system(setup.system())
         .add_system(update_title.system())
-        .add_plugin(WorldPlugin)
+        .add_plugin(VoxelWorldPlugin)
         .add_system(fps_counter.system())
         .init_resource::<State>()
         .run();
