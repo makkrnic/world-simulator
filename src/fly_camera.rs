@@ -6,6 +6,7 @@ use bevy::prelude::*;
 pub struct FlyCam;
 
 const CAMERA_SPEED: f32 = 12.0;
+const SPEEDUP_KEY: KeyCode = KeyCode::LControl;
 
 #[derive(Default)]
 struct InputState {
@@ -47,6 +48,7 @@ fn move_camera_system(
         let right = Vec3::new(local_z.z, 0.0, -local_z.x);
         let up = transform.local_y();
 
+        let mut speed_factor = 1.0;
         for key in keys.get_pressed() {
             match key {
                 KeyCode::W => velocity += fwd,
@@ -55,6 +57,7 @@ fn move_camera_system(
                 KeyCode::D => velocity += right,
                 KeyCode::Space => velocity += up,
                 KeyCode::LShift => velocity -= up,
+                &SPEEDUP_KEY => speed_factor = 10.0,
                 _ => (),
             }
         }
@@ -62,7 +65,7 @@ fn move_camera_system(
         velocity = velocity.normalize();
 
         if !velocity.is_nan() {
-            transform.translation += velocity * time.delta_seconds() * settings.speed;
+            transform.translation += velocity * time.delta_seconds() * settings.speed * speed_factor;
         }
     }
 }

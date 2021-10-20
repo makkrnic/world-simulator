@@ -1,4 +1,4 @@
-const DEFAULT_CHUNK_RENDER_DISTANCE: u8 = 2;
+const DEFAULT_CHUNK_RENDER_DISTANCE: u8 = 4;
 
 pub struct PlayerConfig {
     // radius of chunks around the player to render

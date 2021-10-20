@@ -1,6 +1,7 @@
 mod fly_camera;
 mod world;
 mod config;
+mod render;
 
 use bevy::app::{Events, ManualEventReader};
 use bevy::prelude::*;
@@ -29,6 +30,7 @@ use bevy::render::pass::ClearColor;
 use bevy::render::wireframe::{WireframeConfig, WireframePlugin};
 use bevy::wgpu::WgpuBackend::Vulkan;
 use crate::config::PlayerConfig;
+use crate::render::WorldRenderPlugin;
 
 const WINDOW_TITLE: &str = "World simulator";
 
@@ -83,6 +85,7 @@ fn main() {
         .add_system(update_title.system())
         .add_plugin(VoxelWorldPlugin)
         .add_system(fps_counter.system())
+        .add_plugin(WorldRenderPlugin)
         .init_resource::<State>()
         .run();
 }
