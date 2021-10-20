@@ -23,6 +23,7 @@ use crate::world::{
     CHUNK_SIZE_Y,
     CHUNK_SIZE_Z,
 };
+use crate::world::chunk_generator::generate_chunk;
 
 const VOXEL_SIZE: f32 = 0.25;
 const STEP_SIZE: f32 = 1.0 / VOXEL_SIZE;
@@ -211,12 +212,7 @@ fn generate_chunks(
     for _ in 0..(player_config.chunk_render_distance / 2) {
         if let Some(ev) = gen_requests.pop_back() {
             if let Ok((mut data, mut load_state)) = query.get_mut(ev.0) {
-                data.block_data.fill_extent(
-                    &chunk_extent(),
-                    Voxel {
-                        attributes: [255; 4],
-                    },
-                );
+                generate_chunk(data);
                 *load_state = ChunkLoadState::Done;
             }
         }
