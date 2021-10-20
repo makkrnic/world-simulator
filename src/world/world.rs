@@ -17,12 +17,12 @@ use ndarray::Array3;
 use noise::{NoiseFn, OpenSimplex};
 use crate::config::PlayerConfig;
 use crate::fly_camera::FlyCam;
-// use crate::world::VoxelType::NONE;
 use building_blocks::prelude::FillExtent;
-
-const CHUNK_SIZE_X: i32 = 16;
-const CHUNK_SIZE_Z: i32 = 16;
-const CHUNK_SIZE_Y: i32 = 256;
+use crate::world::{
+    CHUNK_SIZE_X,
+    CHUNK_SIZE_Y,
+    CHUNK_SIZE_Z,
+};
 
 const VOXEL_SIZE: f32 = 0.25;
 const STEP_SIZE: f32 = 1.0 / VOXEL_SIZE;
