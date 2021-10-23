@@ -1,4 +1,6 @@
-const DEFAULT_CHUNK_RENDER_DISTANCE: i32 = 12;
+use crate::world::WORLD_RESOLUTION;
+
+const DEFAULT_CHUNK_RENDER_DISTANCE: i32 = 8;
 
 pub struct PlayerConfig {
   // radius of chunks around the player to render

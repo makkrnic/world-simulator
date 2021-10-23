@@ -1,4 +1,4 @@
-use crate::world::{Chunk, Voxel, CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z};
+use crate::world::{Chunk, Voxel, CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z, WORLD_RESOLUTION};
 use bevy::prelude::Mut;
 use building_blocks::core::{ExtentN, PointN};
 use building_blocks::prelude::FillExtent;
@@ -20,7 +20,7 @@ pub(crate) fn generate_chunk(mut chunk: Mut<Chunk>) {
   )
   .with_seed(LEVEL_SEED)
   .with_octaves(5)
-  .with_freq(0.02)
+  .with_freq(0.02 / (WORLD_RESOLUTION as f32))
   .generate();
 
   for z in 0..CHUNK_SIZE_Z {

@@ -1,11 +1,14 @@
+use crate::world::WORLD_RESOLUTION;
 use bevy::app::{Events, ManualEventReader};
 use bevy::input::mouse::MouseMotion;
 use bevy::prelude::*;
+use bevy::render::camera::{Camera, PerspectiveProjection};
+use bevy::render::render_graph::base::camera::CAMERA_3D;
 
 #[derive(Component, Debug)]
 pub struct FlyCam;
 
-const CAMERA_SPEED: f32 = 12.0;
+const CAMERA_SPEED: f32 = 120.0;
 const SPEEDUP_KEY: KeyCode = KeyCode::LControl;
 
 #[derive(Default)]
@@ -119,6 +122,10 @@ fn setup(mut commands: Commands) {
   commands
     .spawn_bundle(PerspectiveCameraBundle {
       transform: Transform::from_xyz(-2.0, 200.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+      perspective_projection: PerspectiveProjection {
+        near: 0.1,
+        ..Default::default()
+      },
       ..Default::default()
     })
     .insert(FlyCam);
