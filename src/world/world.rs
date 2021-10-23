@@ -139,7 +139,6 @@ fn destroy_chunks(
     match load_state {
       ChunkLoadState::Unload => {
         let entity = world.loaded_chunks.remove(&chunk.pos).unwrap();
-        println!("unloading chunk {:?}", entity);
         commands.entity(entity).despawn();
       }
       _ => {}
@@ -191,7 +190,6 @@ fn load_chunk_data(
   for (mut load_state, entity) in chunks.iter_mut() {
     match *load_state {
       ChunkLoadState::Load => {
-        println!("loading chunk {:?}", entity);
         *load_state = ChunkLoadState::Generate;
         gen_requests.push_front(ChunkLoadRequest(entity));
       }
