@@ -1,5 +1,5 @@
-mod world;
 mod chunk_generator;
+mod world;
 
 pub use world::*;
 
