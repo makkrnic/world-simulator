@@ -51,7 +51,7 @@ pub struct VoxelWorld {
   pub loaded_chunks: ChunkMap,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub enum ChunkLoadState {
   Load,
   Unload,
@@ -100,7 +100,7 @@ fn update_visible_chunks(
       }
     }
 
-    load_radius_chunks.sort_by_key(|a| (a.x.pow(2) + a.y.pow(2)));
+    load_radius_chunks.sort_by_key(|a| -(a.x.pow(2) + a.y.pow(2)));
     // println!("load radius chunks: {:?}", load_radius_chunks);
 
     spawn_requests.send_batch(
@@ -204,7 +204,7 @@ fn generate_chunks(
   mut gen_requests: ResMut<VecDeque<ChunkLoadRequest>>,
 ) {
   for _ in 0..(player_config.chunk_render_distance / 2) {
-    if let Some(ev) = gen_requests.pop_back() {
+    if let Some(ev) = gen_requests.pop_front() {
       if let Ok((mut data, mut load_state)) = query.get_mut(ev.0) {
         generate_chunk(data);
         *load_state = ChunkLoadState::Done;
@@ -229,15 +229,18 @@ pub struct VoxelWorldPlugin;
 
 impl Plugin for VoxelWorldPlugin {
   fn build(&self, app: &mut App) {
+    const UPDATE_VISIBLE_CHUNKS_LABEL: &'static str = "update_visible_chunks";
+    const CREATE_CHUNKS_LABEL: &'static str = "create_chunks";
+
     app
       .insert_resource(VoxelWorld::default())
       .init_resource::<VecDeque<ChunkLoadRequest>>()
       .add_event::<ChunkSpawnRequest>()
       .add_event::<ChunkDespawnRequest>()
       .add_event::<ChunkReadyEvent>()
-      .add_system(update_visible_chunks.system())
-      .add_system(create_chunks.system())
-      .add_system(load_chunk_data.system())
+      .add_system(update_visible_chunks.system().label(UPDATE_VISIBLE_CHUNKS_LABEL))
+      .add_system(create_chunks.system().label(CREATE_CHUNKS_LABEL).after(UPDATE_VISIBLE_CHUNKS_LABEL))
+      .add_system(load_chunk_data.system().after(CREATE_CHUNKS_LABEL))
       .add_system(generate_chunks.system())
       .add_system(prepare_for_unload.system())
       .add_system(mark_chunks_ready.system())

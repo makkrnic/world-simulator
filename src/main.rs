@@ -6,12 +6,11 @@ mod world;
 use bevy::app::{Events, ManualEventReader};
 use bevy::prelude::*;
 
-use bevy::asset::AssetPlugin;
-// use bevy::audio::AudioPlugin;
 use crate::config::PlayerConfig;
 use crate::fly_camera::{FlyCam, FlyCamPlugin};
 use crate::render::WorldRenderPlugin;
 use crate::world::VoxelWorldPlugin;
+use bevy::asset::AssetPlugin;
 use bevy::core::CorePlugin;
 use bevy::diagnostic::{
   Diagnostic, DiagnosticId, Diagnostics, DiagnosticsPlugin, LogDiagnosticsPlugin,
@@ -73,7 +72,6 @@ fn main() {
     .add_plugin(PbrPlugin)
     .add_plugin(UiPlugin)
     .add_plugin(TextPlugin)
-    // .add_plugin(AudioPlugin)
     .add_plugin(GilrsPlugin)
     .add_plugin(GltfPlugin)
     .add_plugin(WinitPlugin)
