@@ -1,5 +1,5 @@
 mod config;
-mod fly_camera;
+mod player;
 mod render;
 mod world;
 
@@ -7,7 +7,7 @@ use bevy::app::{Events, ManualEventReader};
 use bevy::prelude::*;
 
 use crate::config::PlayerConfig;
-use crate::fly_camera::{FlyCam, FlyCamPlugin};
+use crate::player::{CursorGrabStatus, PlayerCamera, PlayerController, PlayerControllerPlugin};
 use crate::render::WorldRenderPlugin;
 use crate::world::VoxelWorldPlugin;
 use bevy::asset::AssetPlugin;
@@ -20,6 +20,7 @@ use bevy::input::mouse::MouseMotion;
 use bevy::input::InputPlugin;
 use bevy::log::LogPlugin;
 use bevy::pbr::PbrPlugin;
+use bevy::render::camera::PerspectiveProjection;
 use bevy::render::pass::ClearColor;
 use bevy::render::wireframe::{WireframeConfig, WireframePlugin};
 use bevy::render::RenderPlugin;
@@ -76,7 +77,6 @@ fn main() {
     .add_plugin(GltfPlugin)
     .add_plugin(WinitPlugin)
     .add_plugin(WgpuPlugin)
-    .add_plugin(FlyCamPlugin)
     .add_plugin(WireframePlugin)
     .add_plugin(LogDiagnosticsPlugin::default())
     .add_startup_system(setup_diagnostic_system.system())
@@ -86,6 +86,7 @@ fn main() {
     .add_system(fps_counter.system())
     .add_plugin(WorldRenderPlugin)
     .init_resource::<State>()
+    .add_plugin(PlayerControllerPlugin)
     .run();
 }
 
@@ -113,7 +114,7 @@ fn setup(mut commands: Commands, mut wireframe_config: ResMut<WireframeConfig>) 
 
 fn update_title(
   mut windows: ResMut<Windows>,
-  mut query: Query<(&FlyCam, &mut Transform)>,
+  mut query: Query<(&PlayerCamera, &mut Transform)>,
   state: Res<State>,
 ) {
   let window = windows.get_primary_mut().unwrap();
@@ -122,8 +123,8 @@ fn update_title(
   for (_camera, transform) in query.iter_mut() {
     let local_z = transform.local_z();
     position_title = format!(
-      "position: {:?}, Local z: {:?}",
-      transform.translation, local_z
+      "position: ({:>2.2}, {:>2.2}, {:>2.2}), Local z: {:?}",
+      transform.translation.x, transform.translation.y, transform.translation.z, local_z
     )
     .to_string();
   }
