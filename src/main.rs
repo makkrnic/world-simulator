@@ -49,7 +49,7 @@ fn main() {
       vsync: true,
       ..Default::default()
     })
-    .insert_resource(ClearColor::default())
+    .insert_resource(ClearColor(Color::hex("7FB8CD").unwrap()))
     .insert_resource(FPSCounter(Timer::from_seconds(1.0, true), 0))
     // .insert_resource(Msaa { samples: 2 })
     .insert_resource(WgpuOptions {
