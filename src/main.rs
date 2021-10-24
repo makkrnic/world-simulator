@@ -7,7 +7,9 @@ use bevy::app::{Events, ManualEventReader};
 use bevy::prelude::*;
 
 use crate::config::PlayerConfig;
-use crate::player::{CursorGrabStatus, PlayerCamera, PlayerController, PlayerControllerPlugin};
+use crate::player::{
+  CursorGrabStatus, Player, PlayerCamera, PlayerController, PlayerControllerPlugin,
+};
 use crate::render::WorldRenderPlugin;
 use crate::world::VoxelWorldPlugin;
 use bevy::asset::AssetPlugin;
@@ -114,7 +116,7 @@ fn setup(mut commands: Commands, mut wireframe_config: ResMut<WireframeConfig>) 
 
 fn update_title(
   mut windows: ResMut<Windows>,
-  mut query: Query<(&PlayerCamera, &mut Transform)>,
+  mut query: Query<(&Player, &mut Transform)>,
   state: Res<State>,
 ) {
   let window = windows.get_primary_mut().unwrap();

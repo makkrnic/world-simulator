@@ -1,6 +1,8 @@
 use crate::config::MovementSettings;
 use crate::world::WORLD_RESOLUTION;
+use bevy::asset::Assets;
 use bevy::math::Quat;
+use bevy::prelude::{shape, Color, GlobalTransform, Mesh, PbrBundle, StandardMaterial};
 use bevy::{
   app::{EventReader, ManualEventReader, Plugin},
   input::{
@@ -10,8 +12,8 @@ use bevy::{
   },
   math::{const_vec3, Vec3},
   prelude::{
-    App, Commands, Component, IntoSystem, MouseButton, PerspectiveCameraBundle, Query, Res, ResMut,
-    Time, Transform, Vec2, Windows,
+    App, BuildChildren, Bundle, Commands, Component, IntoSystem, MouseButton,
+    PerspectiveCameraBundle, Query, Res, ResMut, Time, Transform, Vec2, Windows,
   },
   render::camera::PerspectiveProjection,
   utils::HashMap,
@@ -200,18 +202,42 @@ fn update_cursor_grab(mut windows: ResMut<Windows>, query: Query<&PlayerControll
   }
 }
 
-fn setup_player_camera(mut commands: Commands) {
+fn setup_player_camera(
+  mut commands: Commands,
+  mut meshes: ResMut<Assets<Mesh>>,
+  mut materials: ResMut<Assets<StandardMaterial>>,
+) {
   commands
-    .spawn_bundle(PerspectiveCameraBundle {
-      transform: Transform::from_xyz(-2.0, 200.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-      perspective_projection: PerspectiveProjection {
-        near: 0.1,
-        ..Default::default()
-      },
+    .spawn_bundle(Player {
+      transform: Transform::from_xyz(-20.0, 200.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
       ..Default::default()
     })
-    .insert(PlayerCamera)
+    .with_children(|parent| {
+      parent
+        .spawn_bundle(PerspectiveCameraBundle {
+          transform: Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+          perspective_projection: PerspectiveProjection {
+            near: 0.1,
+            ..Default::default()
+          },
+          ..Default::default()
+        })
+        .insert(PlayerCamera);
+
+      parent.spawn_bundle(PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Box::new(1.0, 2.0, 0.5))),
+        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        ..Default::default()
+      });
+    })
+    .insert(Player::default())
     .insert(PlayerController::default());
+}
+
+#[derive(Default, Component, Bundle)]
+pub struct Player {
+  transform: Transform,
+  global_transform: GlobalTransform,
 }
 
 #[derive(Default, Component, Debug)]

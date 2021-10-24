@@ -1,5 +1,5 @@
 use crate::config::PlayerConfig;
-use crate::player::PlayerCamera;
+use crate::player::{Player, PlayerCamera};
 use crate::world::chunk_generator::generate_chunk;
 use crate::world::{CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z};
 use bevy::app::{App, Plugin};
@@ -81,7 +81,7 @@ pub struct ChunkDataBundle {
 }
 
 fn update_visible_chunks(
-  player_query: Query<(&PlayerCamera, &Transform)>,
+  player_query: Query<(&Player, &Transform)>,
   player_config: Res<PlayerConfig>,
   world: Res<VoxelWorld>,
   mut spawn_requests: EventWriter<ChunkSpawnRequest>,
