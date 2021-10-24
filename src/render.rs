@@ -1,5 +1,5 @@
 use crate::config::PlayerConfig;
-use crate::world::{chunk_extent, Chunk, ChunkReadyEvent, Voxel};
+use crate::world::{chunk_extent, Chunk, ChunkReadyEvent, Voxel, WorldUpdateStage};
 use bevy::pbr::render_graph::PBR_PIPELINE_HANDLE;
 use bevy::render::mesh::Indices;
 use bevy::render::pipeline::PrimitiveTopology;
@@ -129,7 +129,10 @@ impl Plugin for WorldRenderPlugin {
       .add_event::<ChunkMeshingEvent>()
       .init_resource::<VecDeque<ChunkMeshingEvent>>()
       .add_startup_system(setup_render_resources.system())
-      .add_system(attach_chunk_render_bundle.system())
+      .add_system_to_stage(
+        WorldUpdateStage::PostUpdate,
+        attach_chunk_render_bundle.system(),
+      )
       .add_system(handle_chunk_ready_events.system())
       .add_system(mesh_chunks_async.system());
   }

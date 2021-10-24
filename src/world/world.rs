@@ -27,6 +27,13 @@ const NOISE_SCALE: f32 = 16.0 / VOXEL_SIZE;
 
 pub type ChunkMap = HashMap<IVec2, Entity>;
 
+#[derive(Clone, Copy, Hash, Debug, PartialEq, Eq, StageLabel)]
+pub enum WorldUpdateStage {
+  Update,
+  PostUpdate,
+  Cleanup,
+}
+
 #[inline]
 pub fn chunk_extent() -> Extent3i {
   return Extent3i::from_min_and_shape(
@@ -238,12 +245,37 @@ impl Plugin for VoxelWorldPlugin {
       .add_event::<ChunkSpawnRequest>()
       .add_event::<ChunkDespawnRequest>()
       .add_event::<ChunkReadyEvent>()
-      .add_system(update_visible_chunks.system().label(UPDATE_VISIBLE_CHUNKS_LABEL))
-      .add_system(create_chunks.system().label(CREATE_CHUNKS_LABEL).after(UPDATE_VISIBLE_CHUNKS_LABEL))
-      .add_system(load_chunk_data.system().after(CREATE_CHUNKS_LABEL))
-      .add_system(generate_chunks.system())
-      .add_system(prepare_for_unload.system())
-      .add_system(mark_chunks_ready.system())
-      .add_system(destroy_chunks.system());
+      .add_stage(WorldUpdateStage::Update, SystemStage::parallel())
+      .add_stage_after(
+        WorldUpdateStage::Update,
+        WorldUpdateStage::PostUpdate,
+        SystemStage::parallel(),
+      )
+      .add_stage_after(
+        WorldUpdateStage::PostUpdate,
+        WorldUpdateStage::Cleanup,
+        SystemStage::parallel(),
+      )
+      .add_system_to_stage(
+        WorldUpdateStage::Update,
+        update_visible_chunks
+          .system()
+          .label(UPDATE_VISIBLE_CHUNKS_LABEL),
+      )
+      .add_system_to_stage(
+        WorldUpdateStage::Update,
+        create_chunks
+          .system()
+          .label(CREATE_CHUNKS_LABEL)
+          .after(UPDATE_VISIBLE_CHUNKS_LABEL),
+      )
+      .add_system_to_stage(
+        WorldUpdateStage::Update,
+        load_chunk_data.system().after(CREATE_CHUNKS_LABEL),
+      )
+      .add_system_to_stage(WorldUpdateStage::Update, generate_chunks.system())
+      .add_system_to_stage(WorldUpdateStage::Update, mark_chunks_ready.system())
+      .add_system_to_stage(WorldUpdateStage::Cleanup, prepare_for_unload.system())
+      .add_system_to_stage(WorldUpdateStage::Cleanup, destroy_chunks.system());
   }
 }
