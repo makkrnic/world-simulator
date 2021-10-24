@@ -1,23 +1,23 @@
-use crate::config::MovementSettings;
+use crate::config::{MovementSettings, PlayerConfig};
 use crate::world::WORLD_RESOLUTION;
-use bevy::asset::Assets;
-use bevy::math::Quat;
-use bevy::prelude::{shape, Color, GlobalTransform, Mesh, PbrBundle, StandardMaterial};
 use bevy::{
   app::{EventReader, ManualEventReader, Plugin},
+  asset::Assets,
   input::{
     keyboard::{KeyCode, KeyboardInput},
     mouse::{MouseButtonInput, MouseMotion},
     ElementState, Input,
   },
-  math::{const_vec3, Vec3},
+  math::{const_vec3, Quat, Vec3},
   prelude::{
-    App, BuildChildren, Bundle, Commands, Component, IntoSystem, MouseButton,
-    PerspectiveCameraBundle, Query, Res, ResMut, Time, Transform, Vec2, Windows,
+    shape, App, BuildChildren, Bundle, Children, Color, Commands, Component, GlobalTransform,
+    IntoSystem, Mesh, MouseButton, PbrBundle, PerspectiveCameraBundle, Query, Res, ResMut,
+    StandardMaterial, Time, Transform, Vec2, Windows, With, Without,
   },
   render::camera::PerspectiveProjection,
   utils::HashMap,
 };
+use building_blocks::core::sdfu::mods::Translate;
 use std::ops::Deref;
 
 #[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
@@ -142,7 +142,9 @@ fn handle_player_input(
 
 fn handle_mouse_move(
   settings: Res<MovementSettings>,
-  mut query: Query<(&mut PlayerController, &mut Transform)>,
+  player_config: Res<PlayerConfig>,
+  mut q_player: Query<(&mut PlayerController, &mut Transform, &Children), Without<PlayerCamera>>,
+  mut q_player_camera: Query<(&PlayerCamera, &mut Transform)>,
   mut mouse_motion_reader: EventReader<MouseMotion>,
   windows: Res<Windows>,
 ) {
@@ -151,7 +153,25 @@ fn handle_mouse_move(
     return;
   }
 
-  for (mut controller, mut transform) in query.iter_mut() {
+  for (mut controller, mut transform, children) in q_player.iter_mut() {
+    println!("Player: {:?}", transform);
+    println!("Children: {:?}", children);
+    let mut camera_transform_entity = None;
+    let mut player_camera_transform = None;
+    for &child in children.iter() {
+      if let Ok(_) = q_player_camera.get_mut(child) {
+        camera_transform_entity = Some(child);
+        break;
+      }
+    }
+
+    if camera_transform_entity == None {
+      continue;
+    }
+    if let Ok((_, mut pc_transform)) = q_player_camera.get_mut(camera_transform_entity.unwrap()) {
+      player_camera_transform = Some(pc_transform);
+    }
+
     let mut movement = Vec2::ZERO;
     for mouse_move in mouse_motion_reader.iter() {
       movement += mouse_move.delta;
@@ -160,12 +180,18 @@ fn handle_mouse_move(
     let window_scale = window.height().min(window.width());
 
     controller.pitch -= (settings.sensitivity * movement.y * window_scale).to_radians();
+    controller.pitch = controller.pitch.clamp(-1.54, 1.54);
     controller.yaw -= (settings.sensitivity * movement.x * window_scale).to_radians();
 
-    controller.pitch = controller.pitch.clamp(-1.54, 1.54);
-
-    transform.rotation = Quat::from_axis_angle(Vec3::Y, controller.yaw)
-      * Quat::from_axis_angle(Vec3::X, controller.pitch);
+    transform.rotation = Quat::from_axis_angle(Vec3::Y, controller.yaw);
+    if let Some(mut pc_transform) = player_camera_transform {
+      pc_transform.rotation = Quat::from_axis_angle(Vec3::X, controller.pitch);
+      pc_transform.translation = Vec3::new(
+        0.0,
+        -controller.pitch.sin() * player_config.camera_distance,
+        controller.pitch.cos() * player_config.camera_distance,
+      );
+    }
   }
 }
 
@@ -176,7 +202,7 @@ struct PlayerInputState {
   yaw: f32,
 }
 
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct PlayerCamera; // {
                          // /// Head position
                          // pos: Vec3,
@@ -203,6 +229,7 @@ fn update_cursor_grab(mut windows: ResMut<Windows>, query: Query<&PlayerControll
 }
 
 fn setup_player_camera(
+  player_config: Res<PlayerConfig>,
   mut commands: Commands,
   mut meshes: ResMut<Assets<Mesh>>,
   mut materials: ResMut<Assets<StandardMaterial>>,
@@ -213,9 +240,21 @@ fn setup_player_camera(
       ..Default::default()
     })
     .with_children(|parent| {
+      let default_controller = PlayerController::default();
+      let camera_rot = Quat::from_axis_angle(Vec3::X, default_controller.pitch);
+      let camera_offset = Vec3::new(
+        0.0,
+        -default_controller.pitch.sin() * player_config.camera_distance,
+        default_controller.pitch.cos() * player_config.camera_distance,
+      );
+
       parent
         .spawn_bundle(PerspectiveCameraBundle {
-          transform: Transform::from_xyz(0.0, 5.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+          transform: Transform {
+            rotation: camera_rot,
+            translation: camera_offset,
+            ..Default::default()
+          },
           perspective_projection: PerspectiveProjection {
             near: 0.1,
             ..Default::default()
@@ -234,17 +273,27 @@ fn setup_player_camera(
     .insert(PlayerController::default());
 }
 
-#[derive(Default, Component, Bundle)]
+#[derive(Debug, Default, Component, Bundle)]
 pub struct Player {
   transform: Transform,
   global_transform: GlobalTransform,
 }
 
-#[derive(Default, Component, Debug)]
+#[derive(Component, Debug)]
 pub struct PlayerController {
   pub cursor_grab: bool,
   pub pitch: f32,
   pub yaw: f32,
+}
+
+impl Default for PlayerController {
+  fn default() -> Self {
+    Self {
+      pitch: -0.8,
+      yaw: 0.0,
+      cursor_grab: false,
+    }
+  }
 }
 
 pub struct PlayerControllerPlugin;
