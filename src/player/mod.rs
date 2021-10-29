@@ -31,11 +31,18 @@ enum Action {
 
   Speedup,
 
+  ToggleGroovy,
+
   ToggleCursorGrab,
+
+  Quit,
 }
 
 #[derive(Default)]
 pub struct CursorGrabStatus(bool);
+
+#[derive(Default)]
+pub struct GroovyStatus(bool);
 
 #[derive(Hash, Eq, PartialEq)]
 enum UserInput {
@@ -64,10 +71,12 @@ impl Default for KeyBinds {
     binds.insert(UserInput::Keyboard(KeyCode::Space), Action::MoveUp);
     binds.insert(UserInput::Keyboard(KeyCode::LShift), Action::MoveDown);
     binds.insert(UserInput::Keyboard(KeyCode::LControl), Action::Speedup);
+    binds.insert(UserInput::Keyboard(KeyCode::G), Action::ToggleGroovy);
     binds.insert(
       UserInput::Keyboard(KeyCode::Escape),
       Action::ToggleCursorGrab,
     );
+    binds.insert(UserInput::Keyboard(KeyCode::Q), Action::Quit);
 
     KeyBinds(binds)
   }
@@ -118,11 +127,17 @@ fn handle_player_input(
         Action::MoveUp => direction.y += 1.0,
         Action::MoveDown => direction.y -= 1.0,
         Action::Speedup => speedup_factor = 10.0,
+        Action::ToggleGroovy => {
+          if actions.just_pressed(*action) {
+            controller.groovy = !controller.groovy;
+          }
+        },
         Action::ToggleCursorGrab => {
           if actions.just_pressed(*action) {
             controller.cursor_grab = !controller.cursor_grab
           }
-        }
+        },
+        Action::Quit => std::process::exit(0),
       }
     }
 
@@ -282,6 +297,7 @@ pub struct Player {
 #[derive(Component, Debug)]
 pub struct PlayerController {
   pub cursor_grab: bool,
+  pub groovy: bool,
   pub pitch: f32,
   pub yaw: f32,
 }
@@ -292,6 +308,7 @@ impl Default for PlayerController {
       pitch: -0.8,
       yaw: 0.0,
       cursor_grab: false,
+      groovy: false,
     }
   }
 }
@@ -306,6 +323,7 @@ impl Plugin for PlayerControllerPlugin {
       .init_resource::<Input<Action>>()
       .init_resource::<PlayerInputState>()
       .init_resource::<CursorGrabStatus>()
+      .init_resource::<GroovyStatus>()
       .init_resource::<MovementSettings>()
       .add_system(handle_user_input.system())
       .add_system(handle_player_input.system())

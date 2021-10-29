@@ -18,7 +18,9 @@ use building_blocks::{
   },
   prelude::*,
 };
+use rand::Rng;
 use std::collections::VecDeque;
+use crate::player::{GroovyStatus, PlayerController, PlayerControllerPlugin};
 
 struct ChunkMeshingEvent(Entity);
 
@@ -40,11 +42,29 @@ fn attach_chunk_render_bundle(
   mut commands: Commands,
   mut mats: ResMut<Assets<StandardMaterial>>,
   mut meshes: ResMut<Assets<Mesh>>,
+  mut query: Query<&PlayerController>,
 ) {
+  let mut rng = rand::thread_rng();
+  let mut groovy: bool = false;
+
+  for controller in query.get_single() {
+    groovy = controller.groovy;
+  }
+
   for ent in chunks.iter() {
+    let mut red: f32 = 1.0;
+    let mut green: f32 = 1.0;
+    let mut blue: f32 = 1.0;
+
+    if groovy {
+      red = rng.gen_range(0.0..1.0);
+      green = rng.gen_range(0.0..1.0);
+      blue = rng.gen_range(0.0..1.0);
+    }
+
     commands.entity(ent).insert_bundle(ChunkRenderBundle {
       mesh: meshes.add(Mesh::new(PrimitiveTopology::TriangleList)),
-      material: mats.add(Default::default()),
+      material: mats.add(Color::rgb(red, green, blue).into()),
       render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
         PBR_PIPELINE_HANDLE.typed(),
         // TERRAIN_PIPELINE_HANDLE.typed(),

@@ -3964,6 +3964,7 @@ dependencies = [
  "building-blocks",
  "ndarray",
  "noise",
+ "rand 0.8.4",
  "simdnoise",
 ]
 
