@@ -8,7 +8,7 @@ use bevy::prelude::*;
 
 use crate::config::PlayerConfig;
 use crate::player::{
-  CursorGrabStatus, Player, PlayerCamera, PlayerController, PlayerControllerPlugin,
+  CursorGrabStatus, GroovyStatus, Player, PlayerCamera, PlayerController, PlayerControllerPlugin,
 };
 use crate::render::WorldRenderPlugin;
 use crate::world::VoxelWorldPlugin;
