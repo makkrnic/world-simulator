@@ -1,5 +1,5 @@
 use crate::config::PlayerConfig;
-use crate::world::{chunk_extent, Chunk, ChunkReadyEvent, Voxel, WorldUpdateStage};
+use crate::world::{chunk_extent, Chunk, ChunkReadyEvent, Voxel, WorldUpdateStage, CHUNK_GEN_TIME, CHUNK_MESH_TIME};
 use bevy::pbr::render_graph::PBR_PIPELINE_HANDLE;
 use bevy::render::mesh::Indices;
 use bevy::render::pipeline::PrimitiveTopology;
@@ -19,6 +19,8 @@ use building_blocks::{
   prelude::*,
 };
 use std::collections::VecDeque;
+use bevy::diagnostic::Diagnostics;
+use bevy::utils::Instant;
 
 struct ChunkMeshingEvent(Entity);
 
@@ -64,8 +66,10 @@ fn mesh_chunks_async(
   mut chunks: Query<(&Chunk, &mut Visible, &Handle<Mesh>)>,
   mut meshing_events: ResMut<VecDeque<ChunkMeshingEvent>>,
   mut meshes: ResMut<Assets<Mesh>>,
+  mut diagnostics: ResMut<Diagnostics>,
 ) {
   for _ in 0..(player_config.chunk_render_distance / 2) {
+    let start_time = Instant::now();
     if let Some(meshing_event) = meshing_events.pop_back() {
       if let Ok((chunk, mut visibility, mesh_handle)) = chunks.get_mut(meshing_event.0) {
         let mesh = meshes.get_mut(mesh_handle).unwrap();
@@ -99,6 +103,9 @@ fn mesh_chunks_async(
         visibility.is_visible = true;
       }
     }
+
+    let end_time = Instant::now();
+    diagnostics.add_measurement(CHUNK_MESH_TIME, (end_time - start_time).as_secs_f64())
   }
 }
 

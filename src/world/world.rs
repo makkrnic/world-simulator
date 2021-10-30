@@ -1,7 +1,7 @@
 use crate::config::PlayerConfig;
 use crate::player::{Player, PlayerCamera};
 use crate::world::chunk_generator::generate_chunk;
-use crate::world::{CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z};
+use crate::world::{CHUNK_GEN_TIME, CHUNK_LOAD_DATA_TIME, CHUNK_MESH_TIME, CHUNK_SIZE_X, CHUNK_SIZE_Y, CHUNK_SIZE_Z, MAX_CHUNKS_GEN_PER_FRAME, VISIBLE_CHUNK_UPDATE_TIME};
 use bevy::app::{App, Plugin};
 use bevy::asset::Assets;
 use bevy::ecs::entity::Entity;
@@ -13,13 +13,15 @@ use bevy::prelude::*;
 use bevy::prelude::{shape, Mesh, Query, Res, ResMut, StandardMaterial, Transform};
 use bevy::prelude::{Color, IntoSystem};
 use bevy::reflect::List;
-use bevy::utils::HashMap;
+use bevy::utils::{HashMap, Instant};
 use building_blocks::core::{Extent3i, PointN};
 use building_blocks::prelude::Array3x1;
 use building_blocks::prelude::FillExtent;
 use ndarray::Array3;
 use noise::{NoiseFn, OpenSimplex};
 use std::collections::VecDeque;
+use bevy::app::CoreStage::Update;
+use bevy::diagnostic::{Diagnostic, Diagnostics};
 
 const VOXEL_SIZE: f32 = 0.25;
 const STEP_SIZE: f32 = 1.0 / VOXEL_SIZE;
@@ -49,6 +51,7 @@ pub struct Voxel {
 
 struct ChunkSpawnRequest(IVec2);
 struct ChunkDespawnRequest(IVec2, Entity);
+#[derive(Debug)]
 struct ChunkLoadRequest(Entity);
 
 pub struct ChunkReadyEvent(pub IVec2, pub Entity);
@@ -86,8 +89,11 @@ fn update_visible_chunks(
   world: Res<VoxelWorld>,
   mut spawn_requests: EventWriter<ChunkSpawnRequest>,
   mut despawn_requests: EventWriter<ChunkDespawnRequest>,
+  mut diagnostics: ResMut<Diagnostics>,
 ) {
   for (player, transform) in player_query.iter() {
+
+    let start_time = Instant::now();
     let current_chunk_pos = get_chunk_indices(transform.translation);
 
     let mut load_radius_chunks: Vec<IVec2> = Vec::new();
@@ -123,6 +129,9 @@ fn update_visible_chunks(
         despawn_requests.send(ChunkDespawnRequest(key.clone(), entity));
       }
     }
+
+    let end_time = Instant::now();
+    diagnostics.add_measurement(VISIBLE_CHUNK_UPDATE_TIME, (end_time - start_time).as_secs_f64())
   }
 }
 
@@ -193,7 +202,9 @@ fn create_chunks(
 fn load_chunk_data(
   mut chunks: Query<(&mut ChunkLoadState, Entity), Added<Chunk>>,
   mut gen_requests: ResMut<VecDeque<ChunkLoadRequest>>,
+  mut diagnostics: ResMut<Diagnostics>
 ) {
+  let start_time = Instant::now();
   for (mut load_state, entity) in chunks.iter_mut() {
     match *load_state {
       ChunkLoadState::Load => {
@@ -203,21 +214,28 @@ fn load_chunk_data(
       _ => continue,
     }
   }
+  let end_time = Instant::now();
+  diagnostics.add_measurement(CHUNK_LOAD_DATA_TIME, (end_time - start_time).as_secs_f64())
 }
 
 fn generate_chunks(
   player_config: Res<PlayerConfig>,
   mut query: Query<(&mut Chunk, &mut ChunkLoadState)>,
   mut gen_requests: ResMut<VecDeque<ChunkLoadRequest>>,
+  mut diagnostics: ResMut<Diagnostics>
 ) {
-  for _ in 0..(player_config.chunk_render_distance / 2) {
+  let start_time = Instant::now();
+  for _ in 0..MAX_CHUNKS_GEN_PER_FRAME {
     if let Some(ev) = gen_requests.pop_front() {
       if let Ok((mut data, mut load_state)) = query.get_mut(ev.0) {
         generate_chunk(data);
         *load_state = ChunkLoadState::Done;
+
       }
     }
   }
+  let end_time = Instant::now();
+  diagnostics.add_measurement(CHUNK_GEN_TIME, (end_time - start_time).as_secs_f64())
 }
 
 fn mark_chunks_ready(
@@ -230,6 +248,15 @@ fn mark_chunks_ready(
       _ => {}
     }
   }
+}
+
+fn setup_diagnostics(
+  mut diagnostics: ResMut<Diagnostics>
+) {
+  diagnostics.add(Diagnostic::new(VISIBLE_CHUNK_UPDATE_TIME, "Visible chunks calculation time", 1));
+  diagnostics.add(Diagnostic::new(CHUNK_LOAD_DATA_TIME, "Chunk load data time", 1));
+  diagnostics.add(Diagnostic::new(CHUNK_GEN_TIME, "Chunk generation time", 1));
+  diagnostics.add(Diagnostic::new(CHUNK_MESH_TIME, "Chunk meshing time", 1));
 }
 
 pub struct VoxelWorldPlugin;
@@ -276,6 +303,7 @@ impl Plugin for VoxelWorldPlugin {
       .add_system_to_stage(WorldUpdateStage::Update, generate_chunks.system())
       .add_system_to_stage(WorldUpdateStage::Update, mark_chunks_ready.system())
       .add_system_to_stage(WorldUpdateStage::Cleanup, prepare_for_unload.system())
-      .add_system_to_stage(WorldUpdateStage::Cleanup, destroy_chunks.system());
+      .add_system_to_stage(WorldUpdateStage::Cleanup, destroy_chunks.system())
+      .add_startup_system(setup_diagnostics.system());
   }
 }

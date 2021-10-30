@@ -154,8 +154,6 @@ fn handle_mouse_move(
   }
 
   for (mut controller, mut transform, children) in q_player.iter_mut() {
-    println!("Player: {:?}", transform);
-    println!("Children: {:?}", children);
     let mut camera_transform_entity = None;
     let mut player_camera_transform = None;
     for &child in children.iter() {
@@ -252,11 +250,12 @@ fn setup_player_camera(
         .spawn_bundle(PerspectiveCameraBundle {
           transform: Transform {
             rotation: camera_rot,
-            translation: camera_offset,
+            translation: camera_offset * WORLD_RESOLUTION as f32,
             ..Default::default()
           },
           perspective_projection: PerspectiveProjection {
             near: 0.1,
+            far: 10000.0,
             ..Default::default()
           },
           ..Default::default()
@@ -264,7 +263,7 @@ fn setup_player_camera(
         .insert(PlayerCamera);
 
       parent.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Box::new(1.0, 2.0, 0.5))),
+        mesh: meshes.add(Mesh::from(shape::Box::new(1.0 * WORLD_RESOLUTION as f32, 2.0 * WORLD_RESOLUTION as f32, 0.5 * WORLD_RESOLUTION as f32))),
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
         ..Default::default()
       });

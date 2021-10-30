@@ -1,7 +1,7 @@
 use crate::world::WORLD_RESOLUTION;
 
-const DEFAULT_CHUNK_RENDER_DISTANCE: i32 = 8;
-const DEFAULT_MOVEMENT_SPEED: f32 = 50.0;
+const DEFAULT_CHUNK_RENDER_DISTANCE: i32 = 4;
+const DEFAULT_MOVEMENT_SPEED: f32 = 1.0;
 
 pub struct PlayerConfig {
   // radius of chunks around the player to render
@@ -13,7 +13,7 @@ impl Default for PlayerConfig {
   fn default() -> Self {
     Self {
       chunk_render_distance: DEFAULT_CHUNK_RENDER_DISTANCE,
-      camera_distance: 10.0,
+      camera_distance: 10.0 * WORLD_RESOLUTION as f32,
     }
   }
 }
